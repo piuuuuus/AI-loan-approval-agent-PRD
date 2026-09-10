@@ -4,7 +4,7 @@
 
 ## 在线预览
 
-🌐 **[点击查看在线版](https://<username>.github.io/AI-loan-approval-agent-PRD/)**
+🌐 **[点击查看在线版](https://piuuuuus.github.io/AI-loan-approval-agent-PRD/)**
 
 ## 简介
 
