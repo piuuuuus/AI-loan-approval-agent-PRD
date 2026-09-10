@@ -4,7 +4,9 @@
 
 ## 在线预览
 
-🌐 **[点击查看在线版](https://piuuuuus.github.io/AI-loan-approval-agent-PRD/)**
+🌐 **[PRD 文档在线版](https://piuuuuus.github.io/AI-loan-approval-agent-PRD/)**
+
+🖥️ **[产品交互 Demo（审批工作台）](https://piuuuuus.github.io/AI-loan-approval-agent-PRD/demo/)** — 红金银行风，含 AI 审核模拟、证据链溯源、通过/拒绝/改单交互
 
 ## 简介
 

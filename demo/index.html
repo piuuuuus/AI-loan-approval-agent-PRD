@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智审助手 · AI 贷款审批工作台（演示 Demo）</title>
+<style>
+  :root {
+    --red:#C7000B; --red-dark:#A80009; --red-light:#FDF0F0;
+    --blue:#0A3D91; --blue-light:#EEF3FB; --blue-ink:#123B7A;
+    --gold:#C9A063; --gold-dark:#8A6A2F; --gold-light:#FBF7EE; --gold-line:#E4D5B4;
+    --green:#0A7A3D; --green-light:#ECF7F0;
+    --amber:#B45309; --amber-light:#FDF6EC;
+    --bg:#FAF7F5; --card:#FFFFFF; --line:#E8E2DC;
+    --ink:#1F2937; --ink-2:#4B5563; --ink-3:#9CA3AF;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif; background:var(--bg); color:var(--ink); font-size:14px; line-height:1.6; }
+  button { font-family:inherit; cursor:pointer; }
+  .app { max-width:1440px; margin:0 auto; padding:16px 20px 60px; }
+
+  /* ===== 顶栏 ===== */
+  .header { background:linear-gradient(135deg,var(--red-dark) 0%,var(--red) 60%,#D9182C 100%); border-radius:12px; padding:18px 24px; color:#fff; display:flex; align-items:center; justify-content:space-between; border-bottom:3px solid var(--gold); box-shadow:0 4px 14px rgba(167,0,9,.18); }
+  .header-left { display:flex; align-items:center; gap:14px; }
+  .logo { width:44px; height:44px; background:#fff; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--red); font-size:22px; font-weight:800; box-shadow:inset 0 0 0 2px var(--gold); }
+  .header h1 { font-size:19px; letter-spacing:.5px; }
+  .header .sub { font-size:12px; opacity:.85; margin-top:2px; }
+  .header-right { text-align:right; font-size:12.5px; opacity:.95; }
+  .header-right b { font-size:13px; }
+  .header-right .tag { display:inline-block; margin-top:3px; padding:1px 10px; border:1px solid rgba(255,255,255,.55); border-radius:999px; font-size:11px; }
+
+  /* ===== KPI ===== */
+  .kpi-row { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin:16px 0; }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:12px; border-top:3px solid var(--gold); }
+  .kpi .icon { width:38px; height:38px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .kpi .num { font-size:22px; font-weight:700; color:var(--ink); line-height:1.15; }
+  .kpi .num.red { color:var(--red); }
+  .kpi .num.gold { color:var(--gold-dark); }
+  .kpi .lbl { font-size:12px; color:var(--ink-3); }
+
+  /* ===== 布局 ===== */
+  .layout { display:grid; grid-template-columns:320px 1fr; gap:16px; align-items:start; }
+
+  /* ===== 任务队列 ===== */
+  .queue { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; position:sticky; top:16px; }
+  .queue-head { padding:14px 16px 10px; }
+  .queue-head h2 { font-size:15px; color:var(--blue-ink); display:flex; align-items:center; gap:8px; }
+  .queue-head h2::before { content:""; width:4px; height:16px; background:var(--red); border-radius:2px; }
+  .tabs { display:flex; gap:6px; margin-top:10px; }
+  .tab { flex:1; text-align:center; padding:6px 0; font-size:12.5px; border-radius:8px; background:#F5F1EC; color:var(--ink-2); border:1px solid transparent; }
+  .tab.active { background:var(--red); color:#fff; font-weight:600; }
+  .case-list { max-height:640px; overflow-y:auto; }
+  .case-item { padding:12px 16px; border-top:1px solid #F3EDE7; cursor:pointer; position:relative; transition:background .15s; }
+  .case-item:hover { background:#FDFAF7; }
+  .case-item.active { background:var(--red-light); }
+  .case-item.active::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--red); }
+  .case-item .row1 { display:flex; justify-content:space-between; align-items:center; }
+  .case-item .id { font-size:11.5px; color:var(--ink-3); font-family:Consolas,Monaco,monospace; }
+  .case-item .nm { font-size:14.5px; font-weight:600; margin:2px 0 4px; }
+  .case-item .row2 { display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:var(--ink-2); }
+  .case-item .amt { font-weight:700; color:var(--blue-ink); }
+
+  .badge { display:inline-flex; align-items:center; gap:4px; padding:1.5px 9px; border-radius:999px; font-size:11.5px; font-weight:600; white-space:nowrap; }
+  .badge-pass { background:var(--green-light); color:var(--green); }
+  .badge-review { background:var(--amber-light); color:var(--amber); }
+  .badge-reject { background:var(--red-light); color:var(--red); }
+  .badge-wait { background:var(--blue-light); color:var(--blue); }
+  .badge-done { background:#F1F0EF; color:var(--ink-3); }
+  .badge-return { background:#F5F1EC; color:#8B7355; }
+
+  /* ===== 主区 ===== */
+  .main { display:flex; flex-direction:column; gap:16px; min-width:0; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .card-head { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid #F3EDE7; }
+  .card-head h3 { font-size:14.5px; color:var(--blue-ink); display:flex; align-items:center; gap:8px; }
+  .card-head h3::before { content:""; width:4px; height:15px; background:var(--red); border-radius:2px; }
+  .card-body { padding:16px 18px; }
+
+  /* 案例头 + 步骤条 */
+  .case-top { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+  .case-id { font-family:Consolas,Monaco,monospace; font-size:15px; font-weight:700; color:var(--blue-ink); }
+  .steps { display:flex; align-items:center; gap:0; margin-top:14px; }
+  .step { display:flex; align-items:center; }
+  .step .dot { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; background:#EDE7E0; color:var(--ink-3); flex-shrink:0; }
+  .step .lb { margin-left:7px; font-size:12px; color:var(--ink-3); }
+  .step.done .dot { background:var(--blue); color:#fff; }
+  .step.done .lb { color:var(--blue-ink); }
+  .step.current .dot { background:var(--red); color:#fff; box-shadow:0 0 0 4px var(--red-light); }
+  .step.current .lb { color:var(--red); font-weight:600; }
+  .step-line { width:34px; height:2px; background:#E4DCD3; margin:0 10px; }
+  .step-line.done { background:var(--blue); }
+
+  /* 申请人概览 */
+  .profile-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .profile-item { background:var(--blue-light); border-radius:9px; padding:10px 14px; }
+  .profile-item .k { font-size:11.5px; color:var(--ink-3); }
+  .profile-item .v { font-size:15px; font-weight:700; color:var(--blue-ink); margin-top:2px; }
+  .profile-item .v small { font-size:12px; font-weight:400; color:var(--ink-2); }
+
+  /* 材料审核 */
+  .mat-item { display:flex; gap:12px; padding:11px 12px; border:1px solid #F0EAE3; border-radius:9px; margin-bottom:9px; align-items:flex-start; }
+  .mat-item:last-child { margin-bottom:0; }
+  .mat-ok { width:22px; height:22px; border-radius:50%; background:var(--green-light); color:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+  .mat-item .t { font-weight:600; font-size:13.5px; display:flex; align-items:center; gap:8px; }
+  .mat-item .d { font-size:12.5px; color:var(--ink-2); margin-top:2px; }
+  .ref-link { font-size:12px; color:var(--blue); background:var(--blue-light); padding:1.5px 9px; border-radius:6px; cursor:pointer; border:none; display:inline-flex; align-items:center; gap:4px; margin-top:4px; }
+  .ref-link:hover { background:#DCE7F8; }
+
+  /* 风险点 */
+  .risk-item { display:flex; gap:12px; padding:12px 14px; border-radius:9px; border:1px solid #F0EAE3; margin-bottom:9px; }
+  .risk-item:last-child { margin-bottom:0; }
+  .sev { flex-shrink:0; width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+  .sev-high { background:var(--red-light); color:var(--red); }
+  .sev-mid { background:var(--amber-light); color:var(--amber); }
+  .sev-low { background:var(--blue-light); color:var(--blue); }
+  .risk-item .t { font-weight:600; font-size:13.5px; }
+  .risk-item .d { font-size:12.5px; color:var(--ink-2); margin-top:2px; }
+  .risk-item .sug { font-size:12px; color:var(--amber); margin-top:4px; }
+
+  /* AI 建议卡（金色） */
+  .ai-card { border:1px solid var(--gold-line); background:linear-gradient(180deg,#FDFAF3 0%,var(--gold-light) 100%); border-radius:12px; overflow:hidden; }
+  .ai-card .card-head { border-bottom:1px solid var(--gold-line); background:rgba(201,160,99,.08); }
+  .ai-card .card-head h3 { color:var(--gold-dark); }
+  .ai-card .card-head h3::before { background:var(--gold); }
+  .ai-tag { font-size:11px; color:var(--gold-dark); border:1px solid var(--gold-line); padding:1px 8px; border-radius:999px; background:#fff; }
+  .ai-grid { display:grid; grid-template-columns:1.2fr 1fr 1fr 1fr; gap:12px; }
+  .ai-cell { background:#fff; border:1px solid var(--gold-line); border-radius:9px; padding:12px 14px; }
+  .ai-cell .k { font-size:11.5px; color:var(--ink-3); }
+  .ai-cell .v { font-size:16.5px; font-weight:700; color:var(--ink); margin-top:3px; }
+  .ai-cell .v.green { color:var(--green); }
+  .ai-cell .v.red { color:var(--red); }
+  .ai-cell .v.amber { color:var(--amber); }
+  .ai-basis { font-size:12px; color:var(--ink-2); margin-top:10px; background:#fff; border:1px dashed var(--gold-line); border-radius:8px; padding:9px 13px; }
+  .conf-row { display:flex; align-items:center; gap:10px; margin-top:10px; }
+  .conf-bar { flex:1; height:9px; background:#EFE6D3; border-radius:999px; overflow:hidden; }
+  .conf-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,#D9BC85,var(--gold)); transition:width .8s ease; }
+  .conf-val { font-weight:700; color:var(--gold-dark); font-size:13px; }
+  .ai-foot { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .chip { font-size:11.5px; color:var(--ink-2); background:#fff; border:1px solid var(--gold-line); border-radius:999px; padding:2.5px 10px; }
+  .chip.ok { color:var(--green); }
+  .uncert { margin-top:10px; font-size:12.5px; background:var(--amber-light); color:var(--amber); border-radius:8px; padding:9px 13px; }
+  .uncert b { display:block; margin-bottom:2px; }
+
+  /* 决策栏 */
+  .action-bar { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 18px; display:flex; align-items:center; gap:12px; position:sticky; bottom:12px; box-shadow:0 -6px 18px rgba(31,41,55,.07); }
+  .action-bar .hint { flex:1; font-size:12px; color:var(--ink-3); }
+  .btn { padding:9px 22px; border-radius:8px; font-size:14px; font-weight:600; border:1px solid transparent; transition:all .15s; }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .btn-pass { background:var(--green); color:#fff; }
+  .btn-pass:hover:not(:disabled) { background:#096131; }
+  .btn-reject { background:var(--red); color:#fff; }
+  .btn-reject:hover:not(:disabled) { background:var(--red-dark); }
+  .btn-modify { background:#fff; color:var(--blue); border-color:var(--blue); }
+  .btn-modify:hover:not(:disabled) { background:var(--blue-light); }
+  .btn-return { background:#fff; color:var(--ink-2); border-color:#D8D0C8; }
+  .btn-rerun { background:var(--gold); color:#fff; }
+  .btn-rerun:hover:not(:disabled) { background:#B58E50; }
+  .result-banner { border-radius:12px; padding:16px 20px; font-weight:600; display:flex; align-items:center; gap:10px; }
+  .result-banner.pass { background:var(--green-light); color:var(--green); }
+  .result-banner.reject { background:var(--red-light); color:var(--red); }
+  .result-banner.modify { background:var(--blue-light); color:var(--blue-ink); }
+  .result-banner.return { background:#F5F1EC; color:#8B7355; }
+
+  /* 空状态 */
+  .empty { text-align:center; padding:56px 20px; }
+  .empty .big { font-size:44px; margin-bottom:10px; }
+  .empty p { color:var(--ink-2); font-size:13.5px; margin-bottom:16px; }
+
+  /* 抽屉 */
+  .mask { position:fixed; inset:0; background:rgba(31,41,55,.45); z-index:40; display:none; }
+  .mask.show { display:block; }
+  .drawer { position:fixed; top:0; right:0; bottom:0; width:440px; max-width:92vw; background:#fff; z-index:50; box-shadow:-8px 0 24px rgba(0,0,0,.15); transform:translateX(105%); transition:transform .25s ease; display:flex; flex-direction:column; }
+  .drawer.open { transform:translateX(0); }
+  .drawer-head { padding:16px 20px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; background:var(--bg); }
+  .drawer-head h4 { font-size:15px; color:var(--blue-ink); }
+  .drawer-close { border:none; background:#EDE7E0; width:28px; height:28px; border-radius:50%; font-size:14px; color:var(--ink-2); }
+  .drawer-body { flex:1; overflow-y:auto; padding:18px 20px; }
+  .doc { background:#FFFEFA; border:1px solid #EDE6DA; border-radius:8px; padding:16px 18px; font-size:12.5px; color:var(--ink-2); }
+  .doc .doc-title { text-align:center; font-weight:700; color:var(--ink); font-size:13.5px; margin-bottom:12px; }
+  .doc .ln { margin:7px 0; padding-left:8px; }
+  .doc .ln.hl { background:#FFF3C4; border-left:3px solid var(--red); padding-left:8px; font-weight:600; color:var(--ink); }
+  .drawer-foot { padding:12px 20px; border-top:1px solid var(--line); font-size:12px; color:var(--ink-3); background:var(--bg); }
+
+  /* 弹窗 */
+  .modal { position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; }
+  .modal.show { display:flex; }
+  .modal-box { background:#fff; border-radius:14px; width:480px; max-width:94vw; max-height:86vh; overflow-y:auto; padding:22px 26px; box-shadow:0 20px 60px rgba(0,0,0,.25); }
+  .modal-box h4 { font-size:16px; margin-bottom:14px; color:var(--blue-ink); }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
+  .radio { display:flex; gap:9px; padding:10px 12px; border:1px solid #EDE6DA; border-radius:9px; margin-bottom:8px; cursor:pointer; align-items:flex-start; }
+  .radio input { margin-top:3px; accent-color:var(--red); }
+  .radio .rt { font-weight:600; font-size:13px; }
+  .radio .rd { font-size:12px; color:var(--ink-2); margin-top:1px; }
+  .gen-box { background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:12px 14px; font-size:12.5px; color:var(--ink-2); margin-top:12px; min-height:70px; }
+  .gen-box .g-title { font-size:11.5px; color:var(--green); font-weight:600; margin-bottom:6px; }
+  .range-row { display:flex; align-items:center; gap:14px; margin-top:14px; }
+  .range-row input[type=range] { flex:1; accent-color:var(--red); }
+  .range-val { font-size:18px; font-weight:700; color:var(--blue-ink); min-width:110px; text-align:right; }
+  .range-meta { font-size:12px; color:var(--ink-3); margin-top:6px; }
+  .btn-cancel { background:#F1EDE8; color:var(--ink-2); }
+  .btn-confirm { background:var(--red); color:#fff; }
+  .btn-confirm.green { background:var(--green); }
+
+  /* AI 运行弹窗 */
+  .ai-steps { margin:6px 0 4px; }
+  .ai-step { display:flex; align-items:center; gap:11px; padding:10px 4px; font-size:13.5px; color:var(--ink-3); }
+  .ai-step .s-icon { width:24px; height:24px; border-radius:50%; border:2px solid #E4DCD3; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; }
+  .ai-step.running { color:var(--ink); font-weight:600; }
+  .ai-step.running .s-icon { border-color:var(--red); border-top-color:transparent; animation:spin 1s linear infinite; }
+  .ai-step.done { color:var(--green); }
+  .ai-step.done .s-icon { border-color:var(--green); background:var(--green-light); }
+  .ai-step .st { margin-left:auto; font-size:11.5px; color:var(--ink-3); }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .ai-stats { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .ai-stat { font-size:11.5px; background:var(--blue-light); color:var(--blue-ink); border-radius:999px; padding:3px 11px; font-weight:600; }
+
+  /* Toast */
+  .toast { position:fixed; top:20px; left:50%; transform:translate(-50%,-90px); z-index:80; padding:11px 24px; border-radius:10px; color:#fff; font-size:13.5px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.2); transition:transform .3s ease; }
+  .toast.show { transform:translate(-50%,0); }
+  .toast.ok { background:var(--green); }
+  .toast.err { background:var(--red); }
+  .toast.info { background:var(--blue); }
+
+  /* 页脚 */
+  .footer { margin-top:26px; text-align:center; font-size:12px; color:var(--ink-3); }
+  .footer a { color:var(--blue); }
+
+  @media (max-width:1100px) {
+    .kpi-row { grid-template-columns:repeat(3,1fr); }
+    .layout { grid-template-columns:1fr; }
+    .queue { position:static; }
+    .case-list { max-height:300px; }
+    .profile-grid { grid-template-columns:repeat(2,1fr); }
+    .ai-grid { grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 顶栏 -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">智</div>
+      <div>
+        <h1>智审助手 · AI 贷款审批工作台</h1>
+        <div class="sub">AI 辅助 + 人工复核 · 演示 Demo（数据均为虚构）</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <b>审批员：王**</b> · 消费信贷复核组<br>
+      <span class="tag">👤 工号 88234 · 复核权限</span>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="icon" style="background:var(--blue-light)">📋</div>
+      <div><div class="num">2,847</div><div class="lbl">今日进件（笔）</div></div>
+    </div>
+    <div class="kpi">
+      <div class="icon" style="background:var(--red-light)">⏳</div>
+      <div><div class="num red" id="kpi-pending">3</div><div class="lbl">待复核（笔）</div></div>
+    </div>
+    <div class="kpi">
+      <div class="icon" style="background:var(--gold-light)">⚡</div>
+      <div><div class="num gold">38s</div><div class="lbl">AI 分析平均耗时</div></div>
+    </div>
+    <div class="kpi">
+      <div class="icon" style="background:var(--green-light)">🎯</div>
+      <div><div class="num">86.2%</div><div class="lbl">AI 意见采纳率</div></div>
+    </div>
+    <div class="kpi">
+      <div class="icon" style="background:var(--amber-light)">⏱</div>
+      <div><div class="num">22min</div><div class="lbl">平均审批时效</div></div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- 左：任务队列 -->
+    <div class="queue">
+      <div class="queue-head">
+        <h2>任务队列</h2>
+        <div class="tabs">
+          <div class="tab active" data-tab="pending" id="tab-pending">待复核</div>
+          <div class="tab" data-tab="done" id="tab-done">已完成</div>
+          <div class="tab" data-tab="all" id="tab-all">全部</div>
+        </div>
+      </div>
+      <div class="case-list" id="case-list"></div>
+    </div>
+
+    <!-- 右：审批详情 -->
+    <div class="main" id="main"></div>
+  </div>
+
+  <div class="footer">
+    本页面为产品演示 Demo，所有申请人、金额、数据均为虚构 · 仅供产品方案展示<br>
+    <a href="../">← 查看完整 PRD 文档</a> &nbsp;·&nbsp; <a href="https://github.com/piuuuuus/AI-loan-approval-agent-PRD" target="_blank">GitHub 仓库</a>
+  </div>
+</div>
+
+<!-- 证据链抽屉 -->
+<div class="mask" id="mask" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head"><h4 id="drawer-title">证据链 · 原始材料</h4><button class="drawer-close" onclick="closeDrawer()">✕</button></div>
+  <div class="drawer-body" id="drawer-body"></div>
+  <div class="drawer-foot">来源字段由 AI 输出引用 · 可一键溯源（PRD §9.1 关键数字复核）</div>
+</div>
+
+<!-- 通用弹窗 -->
+<div class="modal" id="modal">
+  <div class="modal-box" id="modal-box"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ============ 数据 ============ */
+var CASES = {
+  "0187": {
+    key:"0187", id:"APPLY-20260910-0187", name:"张**", age:37, region:"浙江杭州", job:"互联网 · 产品经理",
+    time:"09:32", amount:80000, term:12, purpose:"家装分期", income:21500, status:"pending", aiDone:true,
+    ai:{
+      consistency:"一致",
+      materials:[
+        { name:"身份核验", detail:"人脸 + 四要素比对一致", refs:["身份核验记录 · verify_channel=人脸+四要素"] },
+        { name:"收入证明", detail:"月收入 21,500 元 · 杭州XX网络科技有限公司 · 司龄 4 年", refs:["收入证明扫描件 P.1 · monthly_income=21500"] },
+        { name:"银行流水", detail:"近 6 月月均流入 21,300 元 · 含工资字样流水 21,480 元", refs:["银行流水 P.3-8 · monthly_avg_in=21300"] },
+        { name:"征信报告", detail:"无当前逾期 · 历史 2 次已结清（2024 年）· 授信使用率 42%", refs:["人行征信报告 P.2 · overdue_count=0"] }
+      ],
+      risks:[
+        { level:"中", title:"近 3 月征信查询 5 次", desc:"查询频次高于平均水平（≤3 次），需关注多头申请倾向", refs:["人行征信报告 P.5 · query_3m=5"], sug:"建议：询问客户近期贷款申请原因" },
+        { level:"低", title:"流水与收入存在 0.9% 偏差", desc:"月均流入 21,300 与收入证明 21,500 基本吻合，偏差在正常范围", refs:["银行流水 P.8 · monthly_avg_in=21300","收入证明 P.1 · monthly_income=21500"], sug:"" }
+      ],
+      rec:{ decision:"通过", amount:64500, basis:"月收入 21,500 × 3 = 64,500，未超过申请金额 80,000，在产品额度区间 5,000~80,000 内", rate:"A 档 · 7.2%/年", conf:0.92, uncertain:[] },
+      cost:0.28, dur:38, retry:0
+    }
+  },
+  "0182": {
+    key:"0182", id:"APPLY-20260910-0182", name:"李**", age:29, region:"广东深圳", job:"个体工商户 · 餐饮",
+    time:"09:15", amount:120000, term:24, purpose:"店铺装修", income:26000, status:"pending", aiDone:true,
+    ai:{
+      consistency:"存在矛盾",
+      materials:[
+        { name:"身份核验", detail:"人脸 + 四要素比对一致", refs:["身份核验记录 · verify_channel=人脸+四要素"] },
+        { name:"收入证明", detail:"月收入 26,000 元 · 收入证明章较模糊，真伪待人工核验", refs:["收入证明扫描件 P.1 · monthly_income=26000"] },
+        { name:"银行流水", detail:"近 6 月月均流入 12,800 元 · 与收入证明存在 51% 偏差", refs:["银行流水 P.2-7 · monthly_avg_in=12800"] },
+        { name:"征信报告", detail:"1 笔循环贷余额 45,000 元 · 授信使用率 68%", refs:["人行征信报告 P.2 · credit_limit_usage=68%"] }
+      ],
+      risks:[
+        { level:"高", title:"流水与收入存在 51% 偏差", desc:"银行流水月均流入 12,800 与收入证明 26,000 严重不符，收入真实性存疑", refs:["银行流水 P.7 · monthly_avg_in=12800","收入证明 P.1 · monthly_income=26000"], sug:"建议：要求补充经营流水或纳税记录后复核" },
+        { level:"中", title:"授信使用率 68% 偏高", desc:"当前循环贷余额 45,000 元，负债水平偏高", refs:["人行征信报告 P.2 · credit_limit_usage=68%"], sug:"" }
+      ],
+      rec:{ decision:"人工重点复核", amount:null, basis:"收入真实性存疑，AI 无法给出可靠额度建议，需人工确认收入后核定", rate:"待定", conf:0.55, uncertain:["收入真实性需人工核实","经营流水未提供"] },
+      cost:0.30, dur:42, retry:1
+    }
+  },
+  "0176": {
+    key:"0176", id:"APPLY-20260910-0176", name:"王**", age:41, region:"湖南长沙", job:"自由职业",
+    time:"08:58", amount:50000, term:6, purpose:"短期周转", income:9800, status:"pending", aiDone:true,
+    ai:{
+      consistency:"一致",
+      materials:[
+        { name:"身份核验", detail:"人脸 + 四要素比对一致", refs:["身份核验记录 · verify_channel=人脸+四要素"] },
+        { name:"收入证明", detail:"月收入 9,800 元 · 自由职业收入证明", refs:["收入证明扫描件 P.1 · monthly_income=9800"] },
+        { name:"银行流水", detail:"近 6 月月均流入 9,600 元 · 与收入证明吻合", refs:["银行流水 P.2-7 · monthly_avg_in=9600"] },
+        { name:"征信报告", detail:"当前逾期 1 笔未结清（31 天）· 近 6 月查询 11 次", refs:["人行征信报告 P.1 · overdue_days_max=31"] }
+      ],
+      risks:[
+        { level:"高", title:"当前逾期 31 天未结清", desc:"名下存在未结清逾期记录，逾期天数 31 天，触发硬规则风险", refs:["人行征信报告 P.1 · overdue_days_max=31"], sug:"" },
+        { level:"高", title:"多头借贷 6 家平台", desc:"反欺诈筛查命中多头借贷风险（平台数 6，阈值 3）", refs:["反欺诈筛查结果 · multi_loan_platforms=6"], sug:"" },
+        { level:"中", title:"近 6 月征信查询 11 次", desc:"查询频次显著偏高", refs:["人行征信报告 P.5 · query_6m=11"], sug:"" }
+      ],
+      rec:{ decision:"拒绝", amount:null, basis:"命中硬规则风险（当前逾期 + 多头借贷），不建议通过", rate:"不适用", conf:0.97, uncertain:[] },
+      cost:0.27, dur:36, retry:0
+    }
+  },
+  "0169": {
+    key:"0169", id:"APPLY-20260910-0169", name:"刘**", age:33, region:"四川成都", job:"制造业 · 工程师",
+    time:"08:41", amount:30000, term:12, purpose:"数码产品", income:12000, status:"pending", aiDone:false, ai:null
+  },
+  "0155": {
+    key:"0155", id:"APPLY-20260910-0155", name:"陈**", age:27, region:"湖北武汉", job:"金融 · 风控专员",
+    time:"09:02", amount:60000, term:12, purpose:"旅游消费", income:18500, status:"passed", aiDone:true,
+    ai:{
+      consistency:"一致",
+      materials:[
+        { name:"身份核验", detail:"人脸 + 四要素比对一致", refs:["身份核验记录 · verify_channel=人脸+四要素"] },
+        { name:"收入证明", detail:"月收入 18,500 元 · 司龄 3 年", refs:["收入证明扫描件 P.1 · monthly_income=18500"] },
+        { name:"银行流水", detail:"近 6 月月均流入 18,200 元 · 与收入证明吻合", refs:["银行流水 P.3-8 · monthly_avg_in=18200"] },
+        { name:"征信报告", detail:"无逾期 · 授信使用率 31%", refs:["人行征信报告 P.2 · overdue_count=0"] }
+      ],
+      risks:[
+        { level:"低", title:"授信使用率 31%", desc:"负债水平正常", refs:["人行征信报告 P.2 · credit_limit_usage=31%"], sug:"" }
+      ],
+      rec:{ decision:"通过", amount:55500, basis:"月收入 18,500 × 3 = 55,500，未超过申请金额 60,000，在区间内", rate:"A 档 · 7.2%/年", conf:0.93, uncertain:[] },
+      cost:0.28, dur:37, retry:0
+    },
+    decide:{ action:"passed", at:"09:06", by:"王**" }
+  },
+  "0148": {
+    key:"0148", id:"APPLY-20260910-0148", name:"赵**", age:45, region:"河南郑州", job:"个体运输",
+    time:"08:47", amount:40000, term:6, purpose:"购车分期", income:11000, status:"rejected", aiDone:true,
+    ai:{
+      consistency:"一致",
+      materials:[
+        { name:"身份核验", detail:"人脸 + 四要素比对一致", refs:["身份核验记录 · verify_channel=人脸+四要素"] },
+        { name:"收入证明", detail:"月收入 11,000 元", refs:["收入证明扫描件 P.1 · monthly_income=11000"] },
+        { name:"银行流水", detail:"近 6 月月均流入 10,700 元 · 与收入证明吻合", refs:["银行流水 P.2-7 · monthly_avg_in=10700"] },
+        { name:"征信报告", detail:"无逾期 · 近 3 月查询 8 次", refs:["人行征信报告 P.5 · query_3m=8"] }
+      ],
+      risks:[
+        { level:"中", title:"近 3 月征信查询 8 次", desc:"查询频次显著偏高", refs:["人行征信报告 P.5 · query_3m=8"], sug:"" }
+      ],
+      rec:{ decision:"人工重点复核", amount:33000, basis:"月收入 11,000 × 3 = 33,000，未超过申请金额 40,000", rate:"B 档 · 8.4%/年", conf:0.74, uncertain:["近期查询频繁原因需人工询问"] },
+      cost:0.28, dur:39, retry:0
+    },
+    decide:{ action:"rejected", at:"08:52", by:"王**", reason:"综合评分不足" }
+  }
+};
+
+/* 0169 运行 AI 后生成的结果 */
+var CASE_0169_RESULT = {
+  consistency:"一致",
+  materials:[
+    { name:"身份核验", detail:"人脸 + 四要素比对一致", refs:["身份核验记录 · verify_channel=人脸+四要素"] },
+    { name:"收入证明", detail:"月收入 12,000 元 · 成都XX机械制造有限公司 · 司龄 5 年", refs:["收入证明扫描件 P.1 · monthly_income=12000"] },
+    { name:"银行流水", detail:"近 6 月月均流入 11,800 元 · 与收入证明吻合（偏差 1.7%）", refs:["银行流水 P.3-8 · monthly_avg_in=11800"] },
+    { name:"征信报告", detail:"无逾期 · 授信使用率 38%", refs:["人行征信报告 P.2 · overdue_count=0"] }
+  ],
+  risks:[
+    { level:"低", title:"授信使用率 38%", desc:"负债水平正常，无明显风险信号", refs:["人行征信报告 P.2 · credit_limit_usage=38%"], sug:"" }
+  ],
+  rec:{ decision:"通过", amount:30000, basis:"月收入 12,000 × 3 = 36,000，高于申请金额 30,000，按申请金额 30,000 核定，在区间内", rate:"A 档 · 7.2%/年", conf:0.88, uncertain:[] },
+  cost:0.28, dur:38, retry:0
+};
+
+/* 证据链原文库 */
+var REFS = {
+  "身份核验记录 · verify_channel=人脸+四要素":{
+    title:"身份核验记录（系统回执）", source:"核身平台 · 调用时间 08:39:12",
+    lines:["核验流水号：VERIFY-20260910-000187","核验方式：人脸识别 + 四要素比对","姓名：张**　证件号：3301**********XXXX","比对结果：一致　相似度 99.2%","银行卡四要素：校验通过"],
+    hl:3
+  },
+  "收入证明扫描件 P.1 · monthly_income=21500":{
+    title:"收入证明（扫描件）", source:"进件材料 OCR · 第 1 页",
+    lines:["杭州XX网络科技有限公司","　　· 在 职 证 明 ·","兹证明 张** 先生自 2022 年 3 月起任职于我司产品部，","月工资收入：人民币 21,500 元","特此证明。","（单位公章）"],
+    hl:3
+  },
+  "银行流水 P.3-8 · monthly_avg_in=21300":{
+    title:"银行流水（近 6 个月）", source:"网银流水接口 · 第 3-8 页",
+    lines:["2026-04-15　工资代发　+21,480.00　余额 31,240.00","2026-05-15　工资代发　+21,480.00　余额 45,610.00","2026-06-15　工资代发　+21,480.00　余额 62,880.00","2026-07-15　工资代发　+21,480.00　余额 78,150.00","2026-08-15　工资代发　+21,480.00　余额 93,420.00","近 6 月月均流入：21,300 元","（摘要行由流水解析工具生成）"],
+    hl:5
+  },
+  "人行征信报告 P.2 · overdue_count=0":{
+    title:"个人信用报告（人行征信）", source:"征信查询接口 · 授权编号 CR-88234",
+    lines:["报告编号：Z20260910XXXX88234","当前逾期账户数：0","历史逾期记录：2 次（均已结清，最近一次 2024-03）","授信使用率：42%","贷款余额合计：0 元"],
+    hl:1
+  },
+  "收入证明扫描件 P.1 · monthly_income=26000":{
+    title:"收入证明（扫描件）", source:"进件材料 OCR · 第 1 页",
+    lines:["深圳市XX餐饮管理有限公司","　　· 在 职 证 明 ·","兹证明 李** 先生自 2024 年 1 月起任职于我司，","月收入：人民币 26,000 元","特此证明。","（公章印迹较模糊，OCR 置信度 61%）"],
+    hl:3
+  },
+  "银行流水 P.2-7 · monthly_avg_in=12800":{
+    title:"银行流水（近 6 个月）", source:"网银流水接口 · 第 2-7 页",
+    lines:["2026-04-10　转账存入　+8,200.00　余额 12,480.00","2026-05-12　转账存入　+9,600.00　余额 18,030.00","2026-06-10　转账存入　+7,900.00　余额 21,440.00","2026-07-15　转账存入　+11,200.00　余额 26,880.00","2026-08-10　转账存入　+10,300.00　余额 31,150.00","近 6 月月均流入：12,800 元","（摘要行由流水解析工具生成 · 未发现工资字样）"],
+    hl:5
+  },
+  "人行征信报告 P.2 · credit_limit_usage=68%":{
+    title:"个人信用报告（人行征信）", source:"征信查询接口 · 授权编号 CR-88241",
+    lines:["报告编号：Z20260910XXXX88241","当前逾期账户数：0","循环贷账户：1 笔（余额 45,000 元 / 授信 66,000 元）","授信使用率：68%","贷款余额合计：45,000 元"],
+    hl:3
+  },
+  "人行征信报告 P.1 · overdue_days_max=31":{
+    title:"个人信用报告（人行征信）", source:"征信查询接口 · 授权编号 CR-88236",
+    lines:["报告编号：Z20260910XXXX88236","当前逾期账户数：1","最大逾期天数：31 天（未结清）","逾期账户：XX银行信用卡 · 当前余额 8,420 元","近 6 月查询次数：11 次"],
+    hl:2
+  },
+  "反欺诈筛查结果 · multi_loan_platforms=6":{
+    title:"反欺诈筛查结果", source:"反欺诈引擎 · 调用时间 08:57:44",
+    lines:["筛查流水号：AF-20260910-000176","黑名单：未命中","多头借贷平台数：6（阈值 3）","近 30 日申请平台：A贷、B分期、C花、D借、E贷、F卡","风险等级：高风险"],
+    hl:2
+  },
+  "人行征信报告 P.5 · query_3m=5":{
+    title:"个人信用报告（人行征信）", source:"征信查询接口 · 授权编号 CR-88234",
+    lines:["报告编号：Z20260910XXXX88234","近 3 个月机构查询次数：5","　2026-07-02　XX银行 · 贷款审批","　2026-07-21　XX消金 · 信用卡审批","　2026-08-15　XX银行 · 贷款审批","　2026-08-28　XX消金 · 贷款审批","　2026-09-03　XX银行 · 贷款审批"],
+    hl:1
+  },
+  "银行流水 P.8 · monthly_avg_in=21300":{ title:"银行流水（近 6 个月）", source:"网银流水接口 · 第 8 页", lines:["近 6 月月均流入：21,300 元","近 6 月月均流出：12,400 元","工资字样流水：有（月均 21,480 元）","（摘要行由流水解析工具生成）"], hl:0 },
+  "人行征信报告 P.5 · query_6m=11":{ title:"个人信用报告（人行征信）", source:"征信查询接口 · 授权编号 CR-88236", lines:["报告编号：Z20260910XXXX88236","近 6 个月机构查询次数：11","（查询明细 11 条，略）","风险提示：查询频次显著偏高"], hl:1 },
+  "收入证明扫描件 P.1 · monthly_income=9800":{ title:"收入证明（扫描件）", source:"进件材料 OCR · 第 1 页", lines:["　　· 收 入 证 明 ·","本人 王** 系自由职业者（网络服务），","月收入：人民币 9,800 元","特此声明。","（个人签字）"], hl:2 },
+  "银行流水 P.2-7 · monthly_avg_in=9600":{ title:"银行流水（近 6 个月）", source:"网银流水接口 · 第 2-7 页", lines:["近 6 月月均流入：9,600 元","与收入证明偏差：2.0%","（摘要行由流水解析工具生成）"], hl:0 },
+  "收入证明扫描件 P.1 · monthly_income=18500":{ title:"收入证明（扫描件）", source:"进件材料 OCR · 第 1 页", lines:["武汉XX金融信息服务有限公司","　　· 在 职 证 明 ·","兹证明 陈** 女士自 2023 年 5 月起任职于我司风控部，","月工资收入：人民币 18,500 元","特此证明。","（单位公章）"], hl:3 },
+  "银行流水 P.3-8 · monthly_avg_in=18200":{ title:"银行流水（近 6 个月）", source:"网银流水接口 · 第 3-8 页", lines:["近 6 月月均流入：18,200 元","工资字样流水：有（月均 18,300 元）","（摘要行由流水解析工具生成）"], hl:0 },
+  "人行征信报告 P.2 · credit_limit_usage=31%":{ title:"个人信用报告（人行征信）", source:"征信查询接口 · 授权编号 CR-88215", lines:["报告编号：Z20260910XXXX88215","当前逾期账户数：0","授信使用率：31%","贷款余额合计：0 元"], hl:2 },
+  "收入证明扫描件 P.1 · monthly_income=11000":{ title:"收入证明（扫描件）", source:"进件材料 OCR · 第 1 页", lines:["　　· 收 入 证 明 ·","本人 赵** 从事个体运输经营，","月收入：人民币 11,000 元","特此声明。","（个人签字 + 运输合同附件）"], hl:2 },
+  "银行流水 P.2-7 · monthly_avg_in=10700":{ title:"银行流水（近 6 个月）", source:"网银流水接口 · 第 2-7 页", lines:["近 6 月月均流入：10,700 元","与收入证明偏差：2.7%","（摘要行由流水解析工具生成）"], hl:0 },
+  "人行征信报告 P.5 · query_3m=8":{ title:"个人信用报告（人行征信）", source:"征信查询接口 · 授权编号 CR-88228", lines:["报告编号：Z20260910XXXX88228","近 3 个月机构查询次数：8","风险提示：查询频次显著偏高"], hl:1 },
+  "收入证明扫描件 P.1 · monthly_income=12000":{ title:"收入证明（扫描件）", source:"进件材料 OCR · 第 1 页", lines:["成都XX机械制造有限公司","　　· 在 职 证 明 ·","兹证明 刘** 先生自 2021 年 8 月起任职于我司技术部，","月工资收入：人民币 12,000 元","特此证明。","（单位公章）"], hl:3 },
+  "银行流水 P.3-8 · monthly_avg_in=11800":{ title:"银行流水（近 6 个月）", source:"网银流水接口 · 第 3-8 页", lines:["近 6 月月均流入：11,800 元","工资字样流水：有（月均 11,920 元）","（摘要行由流水解析工具生成）"], hl:0 },
+  "人行征信报告 P.2 · credit_limit_usage=38%":{ title:"个人信用报告（人行征信）", source:"征信查询接口 · 授权编号 CR-88233", lines:["报告编号：Z20260910XXXX88233","当前逾期账户数：0","授信使用率：38%","贷款余额合计：0 元"], hl:2 }
+};
+
+/* ============ 状态 ============ */
+var currentKey = "0187";
+var currentTab = "pending";
+var busy = false;
+
+function money(n){ return n==null ? "—" : "¥" + n.toLocaleString("zh-CN"); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function $id(x){ return document.getElementById(x); }
+
+function badgeFor(c){
+  if(c.status==="passed") return ['<span class="badge badge-pass">✓ 已通过</span>',"pass"];
+  if(c.status==="rejected") return ['<span class="badge badge-reject">✕ 已拒绝</span>',"reject"];
+  if(c.status==="modified") return ['<span class="badge badge-done">✎ 已改单</span>',"modify"];
+  if(c.status==="returned") return ['<span class="badge badge-return">↩ 已退回补材料</span>',"return"];
+  if(!c.aiDone) return ['<span class="badge badge-wait">○ 待 AI 审核</span>',"wait"];
+  var d=c.ai.rec.decision;
+  if(d==="通过") return ['<span class="badge badge-pass">AI 建议通过</span>',"pass"];
+  if(d==="拒绝") return ['<span class="badge badge-reject">AI 建议拒绝</span>',"reject"];
+  return ['<span class="badge badge-review">⚠ AI 建议人工复核</span>',"review"];
+}
+
+function visibleCases(){
+  return Object.keys(CASES).filter(function(k){
+    var c=CASES[k];
+    if(currentTab==="pending") return c.status==="pending";
+    if(currentTab==="done") return c.status!=="pending";
+    return true;
+  }).sort(function(a,b){ return parseInt(b)-parseInt(a); });
+}
+
+function renderQueue(){
+  var html="";
+  visibleCases().forEach(function(k){
+    var c=CASES[k], b=badgeFor(c), active=(k===currentKey)?" active":"";
+    html+='<div class="case-item'+active+'" onclick="selectCase(\''+k+'\')">'
+      +'<div class="row1"><span class="id">'+c.id+'</span>'+b[0]+'</div>'
+      +'<div class="nm">'+c.name+' · '+c.age+'岁</div>'
+      +'<div class="row2"><span>'+money(c.amount)+' · '+c.term+'期 · '+c.time+'</span></div>'
+      +'</div>';
+  });
+  $id("case-list").innerHTML=html;
+  $id("tab-pending").textContent="待复核 ("+countPending()+")";
+  $id("tab-done").textContent="已完成 ("+countDone()+")";
+  $id("tab-all").textContent="全部 ("+Object.keys(CASES).length+")";
+  $id("kpi-pending").textContent=countPending();
+}
+
+function countPending(){ return Object.keys(CASES).filter(function(k){return CASES[k].status==="pending";}).length; }
+function countDone(){ return Object.keys(CASES).filter(function(k){return CASES[k].status!=="pending";}).length; }
+
+/* ============ 主区渲染 ============ */
+function renderMain(){
+  var c=CASES[currentKey], html="";
+  html+=caseTopCard(c);
+  if(!c.aiDone){ html+=emptyState(c); }
+  else { html+=aiSection(c); html+=actionSection(c); }
+  $id("main").innerHTML=html;
+}
+
+function stepHtml(done3, done4, done5){
+  function s(label, state, icon){
+    var cls = state==="done" ? "done" : state==="current" ? "current" : "";
+    return '<div class="step '+cls+'"><div class="dot">'+icon+'</div><div class="lb">'+label+'</div></div>';
+  }
+  var html=s("进件","done","✓")+'<div class="step-line done"></div>'+s("身份核验","done","✓");
+  html+='<div class="step-line done"></div>'+s("AI 审核",done3?"done":"",done3?"✓":"○");
+  html+='<div class="step-line '+(done4?"done":"")+'"></div>'+s("人工复核",done4?"done":"current",done4?"✓":"●");
+  html+='<div class="step-line"></div>'+s("放款",done5?"done":"",done5?"✓":"○");
+  return html;
+}
+
+function caseTopCard(c){
+  var b=badgeFor(c);
+  var done4 = c.status!=="pending";
+  var done5 = c.status==="passed";
+  var steps=stepHtml(c.aiDone,done4,done5);
+  return '<div class="card"><div class="card-body">'
+    +'<div class="case-top"><span class="case-id">'+c.id+'</span>'+b[0]+'</div>'
+    +'<div class="steps">'+steps+'</div>'
+    +'<div class="profile-grid" style="margin-top:16px">'
+    +'<div class="profile-item"><div class="k">申请人</div><div class="v">'+c.name+' <small>'+c.age+'岁 · '+c.region+'</small></div></div>'
+    +'<div class="profile-item"><div class="k">职业</div><div class="v" style="font-size:13.5px">'+c.job+'</div></div>'
+    +'<div class="profile-item"><div class="k">申请金额 / 期限</div><div class="v">'+money(c.amount)+' <small>'+c.term+'期 · '+c.purpose+'</small></div></div>'
+    +'<div class="profile-item"><div class="k">月收入（收入证明）</div><div class="v">'+money(c.income)+'</div></div>'
+    +'</div></div></div>';
+}
+
+function emptyState(c){
+  return '<div class="card"><div class="card-body empty">'
+    +'<div class="big">🤖</div><p>该进件尚未运行 AI 审核。点击下方按钮模拟 AI 审核全流程：<br>OCR 材料识别 → 外部数据采集 → LLM 材料智能审核 → 审批意见书生成</p>'
+    +'<button class="btn btn-rerun" onclick="runAI()">▶ 运行 AI 审核（预计 40 秒）</button>'
+    +'</div></div>';
+}
+
+function aiSection(c){
+  var ai=c.ai, html="";
+  /* 材料审核 */
+  html+='<div class="card"><div class="card-head"><h3>AI 材料智能审核</h3><span class="badge '+(ai.consistency==="一致"?"badge-pass":"badge-review")+'">'+(ai.consistency==="一致"?"✓ 一致性检查：一致":"⚠ 一致性检查：存在矛盾")+'</span></div><div class="card-body">';
+  ai.materials.forEach(function(m){
+    html+='<div class="mat-item"><div class="mat-ok">✓</div><div><div class="t">'+m.name+'</div><div class="d">'+m.detail+'</div>';
+    m.refs.forEach(function(r){ html+='<button class="ref-link" onclick="openDrawer(\''+esc(r)+'\')">📄 查看原文 · '+r.split(" · ")[1]+'</button> '; });
+    html+='</div></div>';
+  });
+  html+='</div></div>';
+
+  /* 风险点 */
+  html+='<div class="card"><div class="card-head"><h3>风险点识别（'+ai.risks.length+' 条）</h3><span class="badge badge-done">'+money(ai.cost)+' / 单 · '+ai.dur+'s</span></div><div class="card-body">';
+  ai.risks.forEach(function(rk){
+    var sevCls = rk.level==="高" ? "sev-high" : rk.level==="中" ? "sev-mid" : "sev-low";
+    html+='<div class="risk-item"><div class="sev '+sevCls+'">'+rk.level+'</div><div>'
+      +'<div class="t">'+rk.title+'</div><div class="d">'+rk.desc+'</div>'
+      +'<div class="sug">'+(rk.sug||"")+'</div>';
+    rk.refs.forEach(function(r){ html+='<button class="ref-link" onclick="openDrawer(\''+esc(r)+'\')">📄 证据链 · '+r.split(" · ")[1]+'</button> '; });
+    html+='</div></div>';
+  });
+  html+='</div></div>';
+
+  /* AI 审批建议（金色卡） */
+  var dec=ai.rec;
+  var decCls = dec.decision==="通过" ? "green" : dec.decision==="拒绝" ? "red" : "amber";
+  var decBadge = dec.decision==="通过" ? "badge-pass" : dec.decision==="拒绝" ? "badge-reject" : "badge-review";
+  html+='<div class="ai-card"><div class="card-head"><h3>AI 审批意见书（仅供参考 · 最终决策由审批员做出）</h3><span class="ai-tag">生成于 09:31 · 模型 Qwen2.5-72B（私有化）</span></div><div class="card-body">'
+    +'<div class="ai-grid">'
+    +'<div class="ai-cell"><div class="k">建议结论</div><div class="v '+decCls+'"><span class="badge '+decBadge+'">'+dec.decision+'</span></div></div>'
+    +'<div class="ai-cell"><div class="k">建议额度</div><div class="v">'+money(dec.amount)+'</div></div>'
+    +'<div class="ai-cell"><div class="k">建议利率档位</div><div class="v" style="font-size:14px">'+dec.rate+'</div></div>'
+    +'<div class="ai-cell"><div class="k">置信度</div><div class="conf-row"><div class="conf-bar"><div class="conf-fill" style="width:'+Math.round(dec.conf*100)+'%"></div></div><span class="conf-val">'+dec.conf.toFixed(2)+'</span></div></div>'
+    +'</div>'
+    +'<div class="ai-basis">📐 额度计算依据：'+dec.basis+'（所有数字均引用自输入材料，见 PRD §6.1 核心规则）</div>';
+  if(dec.uncertain && dec.uncertain.length){
+    html+='<div class="uncert"><b>⚠ 需人工确认事项：</b>'+dec.uncertain.map(function(u){return "· "+u;}).join("<br>")+'</div>';
+  }
+  html+='<div class="ai-foot">'
+    +'<span class="chip ok">✓ JSON Schema 校验通过</span><span class="chip ok">✓ 关键数字复核通过</span>'
+    +'<span class="chip">自动重试 '+ai.retry+' 次</span><span class="chip">数据不出域 · 私有化部署</span>'
+    +'</div></div></div>';
+  return html;
+}
+
+function actionSection(c){
+  if(c.status!=="pending"){
+    var d=c.decide||{action:c.status, at:"—", by:"—"};
+    var map={passed:["pass","✓ 已通过 · 放款指令已下发"],rejected:["reject","✕ 已拒绝 · 客户通知已生成"],modified:["modify","✎ 已改单 · 额度调整已提交"],returned:["return","↩ 已退回补材料"]};
+    var m=map[d.action]||map[c.status];
+    return '<div class="card"><div class="card-body"><div class="result-banner '+m[0]+'">'+m[1]+'<span style="margin-left:auto;font-weight:400;font-size:12.5px">经办：'+d.by+' · '+d.at+'</span></div></div></div>';
+  }
+  return '<div class="action-bar"><span class="hint">请基于 AI 意见与证据链做出最终决策（AI 无决策权）</span>'
+    +'<button class="btn btn-return" onclick="openReturn()">退回补材料</button>'
+    +'<button class="btn btn-modify" onclick="openModify()">✎ 改单</button>'
+    +'<button class="btn btn-reject" onclick="openReject()">拒绝</button>'
+    +'<button class="btn btn-pass" onclick="openPass()">✓ 通过</button>'
+    +'</div>';
+}
+
+/* ============ 交互 ============ */
+function selectCase(k){
+  if(busy) return;
+  currentKey=k; renderQueue(); renderMain();
+  $id("main").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function switchTab(t){
+  currentTab=t;
+  document.querySelectorAll(".tab").forEach(function(el){ el.classList.toggle("active", el.dataset.tab===t); });
+  var first=visibleCases()[0]; if(first) currentKey=first;
+  renderQueue(); renderMain();
+}
+document.querySelectorAll(".tab").forEach(function(el){ el.addEventListener("click", function(){ switchTab(el.dataset.tab); }); });
+
+function toast(msg,type){
+  var t=$id("toast");
+  t.textContent=msg; t.className="toast show "+(type||"info");
+  clearTimeout(t._tm); t._tm=setTimeout(function(){ t.classList.remove("show"); },3200);
+}
+
+/* 证据链抽屉 */
+function openDrawer(ref){
+  var r=REFS[ref];
+  if(!r){ r={title:ref, source:"材料原文", lines:["（原文预览略）"], hl:-1}; }
+  $id("drawer-title").textContent="证据链 · "+r.title;
+  var html='<div class="doc"><div class="doc-title">'+r.title+'</div>';
+  r.lines.forEach(function(ln,i){
+    html+='<div class="ln'+(i===r.hl?" hl":"")+'">'+ln+'</div>';
+  });
+  html+='</div><div style="margin-top:12px;font-size:12px;color:var(--ink-3)">来源：'+r.source+'</div>';
+  $id("drawer-body").innerHTML=html;
+  $id("drawer").classList.add("open"); $id("mask").classList.add("show");
+}
+function closeDrawer(){ $id("drawer").classList.remove("open"); $id("mask").classList.remove("show"); }
+
+/* 弹窗通用 */
+function openModal(html){ $id("modal-box").innerHTML=html; $id("modal").classList.add("show"); }
+function closeModal(){ $id("modal").classList.remove("show"); }
+$id("modal").addEventListener("click", function(e){ if(e.target===$id("modal")) closeModal(); });
+
+/* 通过 */
+function openPass(){
+  var c=CASES[currentKey], r=c.ai.rec;
+  openModal('<h4>确认通过</h4>'
+    +'<div class="gen-box"><div class="g-title">本次放款要素</div>'
+    +'额度：<b>'+money(r.amount)+'</b> · 期限 '+c.term+' 期 · 利率 <b>'+r.rate.split(" · ")[0]+'</b>（'+r.rate.split(" · ")[1]+'）<br>'
+    +'确认后将下发资金指令，进入放款流程。</div>'
+    +'<div class="modal-actions"><button class="btn btn-cancel" onclick="closeModal()">取消</button>'
+    +'<button class="btn btn-confirm green" onclick="decide(\'passed\')">确认通过</button></div>');
+}
+/* 拒绝 */
+function openReject(){
+  openModal('<h4>拒绝进件</h4><div style="font-size:13px;color:var(--ink-2)">选择拒件原因（将用于 AI 生成客户解释）：</div>'
+    +'<div style="margin-top:10px">'
+    +'<label class="radio"><input type="radio" name="rr" value="综合评分不足" checked><div><div class="rt">综合评分不足</div><div class="rd">建议保持良好用信记录，3 个月后可再次申请</div></div></label>'
+    +'<label class="radio"><input type="radio" name="rr" value="当前存在逾期记录"><div><div class="rt">当前存在逾期记录</div><div class="rd">需先处理逾期款项</div></div></label>'
+    +'<label class="radio"><input type="radio" name="rr" value="多头借贷风险"><div><div class="rt">多头借贷风险</div><div class="rd">近期借贷申请较多</div></div></label>'
+    +'</div>'
+    +'<div class="gen-box" id="rej-text"><div class="g-title">AI 生成的客户解释（已通过合规审查 · 不披露风控模型细节）</div>经综合评估，您本次申请暂未通过。建议您保持良好的用信记录，3 个月后可再次尝试。</div>'
+    +'<div class="modal-actions"><button class="btn btn-cancel" onclick="closeModal()">取消</button>'
+    +'<button class="btn btn-confirm" onclick="decide(\'rejected\')">确认拒绝</button></div>');
+  var texts={"综合评分不足":"经综合评估，您本次申请暂未通过。建议您保持良好的用信记录，3 个月后可再次尝试。","当前存在逾期记录":"经综合评估，您本次申请暂未通过。主要原因：您名下存在未结清的逾期记录。请先处理逾期款项并保持良好还款记录后再申请。","多头借贷风险":"经综合评估，您本次申请暂未通过。主要原因：您近期在其他平台借贷申请较多。建议您减少借贷申请，6 个月后可再次尝试。"};
+  document.querySelectorAll('input[name="rr"]').forEach(function(el){
+    el.addEventListener("change", function(){
+      var t=document.querySelector('input[name="rr"]:checked').value;
+      $id("rej-text").innerHTML='<div class="g-title">AI 生成的客户解释（已通过合规审查 · 不披露风控模型细节）</div>'+texts[t];
+    });
+  });
+}
+/* 改单 */
+function openModify(){
+  var c=CASES[currentKey], base=(c.ai && c.ai.rec.amount)||c.amount;
+  openModal('<h4>改单 · 调整额度</h4>'
+    +'<div class="range-row"><input type="range" id="mod-range" min="5000" max="80000" step="500" value="'+base+'"><span class="range-val" id="mod-val">'+money(base)+'</span></div>'
+    +'<div class="range-meta">产品规则额度区间：¥5,000 ~ ¥80,000 · 当前额度相当于月收入 <b id="mod-x">'+ (base/c.income).toFixed(1) +'</b> 倍（'+c.name+' 月收入 '+money(c.income)+'）</div>'
+    +'<div class="modal-actions"><button class="btn btn-cancel" onclick="closeModal()">取消</button>'
+    +'<button class="btn btn-confirm" onclick="decide(\'modified\')">确认改单</button></div>');
+  $id("mod-range").addEventListener("input", function(){
+    var v=parseInt(this.value);
+    $id("mod-val").textContent=money(v);
+    $id("mod-x").textContent=(v/c.income).toFixed(1);
+    window._modVal=v;
+  });
+  window._modVal=base;
+}
+/* 退回补材料 */
+function openReturn(){
+  var c=CASES[currentKey];
+  openModal('<h4>退回客户补充材料</h4><div style="font-size:13px;color:var(--ink-2)">将通知客户补充以下材料后重新进件：</div>'
+    +'<div class="gen-box" style="margin-top:10px">'+(c.key==="0182" ? "1. 经营流水证明（近 6 个月对公/经营账户）<br>2. 收入佐证（纳税记录或经营流水）" : "1. 收入佐证材料（近 3 个月工资单）<br>2. 用途证明材料")+'</div>'
+    +'<div class="modal-actions"><button class="btn btn-cancel" onclick="closeModal()">取消</button>'
+    +'<button class="btn btn-confirm" onclick="decide(\'returned\')">确认退回</button></div>');
+}
+
+function decide(action){
+  busy=true;
+  var c=CASES[currentKey];
+  var newAmt = action==="modified" ? window._modVal : null;
+  c.status=action;
+  c.decide={ action:action, at:"09:"+String(34+Math.floor(Math.random()*20)), by:"王**" };
+  if(action==="modified") c.decide.note="额度调整为 "+money(newAmt);
+  closeModal(); renderQueue(); renderMain();
+  var msg={passed:"✓ 已通过 · 放款指令已下发",rejected:"✕ 已拒绝 · 客户通知已生成（附合规解释）",modified:"✎ 改单成功 · 额度调整为 "+(newAmt?money(newAmt):""),returned:"↩ 已退回 · 补材料通知已发送客户"}[action];
+  toast(msg, action==="rejected"?"err":action==="passed"?"ok":"info");
+  setTimeout(function(){ busy=false; },400);
+}
+
+/* AI 审核模拟 */
+function runAI(){
+  busy=true;
+  var steps=[
+    ["OCR 材料识别","识别进件材料 4 份（身份证/收入证明/流水/征信授权）",1400],
+    ["外部数据采集","征信 API · 流水 API · 反欺诈 API",2000],
+    ["LLM 材料智能审核","Qwen2.5-72B-Instruct（私有化）· 交叉核验一致性",2800],
+    ["JSON Schema 校验 + 关键数字复核","格式校验 · 输出数字与输入字段逐项比对",1200],
+    ["审批意见书生成","风险点 + 建议结论 + 建议额度 + 证据链",2200]
+  ];
+  var html='<h4>🤖 AI 审核运行中</h4><div class="ai-steps">';
+  steps.forEach(function(s,i){ html+='<div class="ai-step" id="ai-step-'+i+'"><span class="s-icon"></span><span>'+s[0]+'</span><span class="st">'+s[1]+'</span></div>'; });
+  html+='</div><div class="ai-stats" id="ai-stats"></div>';
+  openModal(html);
+  var i=0;
+  function next(){
+    if(i>0){ var prev=$id("ai-step-"+(i-1)); prev.className="ai-step done"; prev.querySelector(".s-icon").textContent="✓"; }
+    if(i>=steps.length){
+      var stats='<span class="ai-stat">单笔成本 '+money(0.28)+'</span><span class="ai-stat">耗时 38s</span><span class="ai-stat">重试 0 次</span><span class="ai-stat">数据不出域 ✓</span>';
+      $id("ai-stats").innerHTML=stats;
+      setTimeout(function(){
+        closeModal();
+        var c=CASES[currentKey];
+        c.aiDone=true; c.ai=CASE_0169_RESULT;
+        renderQueue(); renderMain();
+        toast("✓ AI 审核完成 · 成本 ¥0.28 · 耗时 38s","ok");
+        busy=false;
+      },900);
+      return;
+    }
+    $id("ai-step-"+i).className="ai-step running";
+    setTimeout(next, steps[i][2]);
+    i++;
+  }
+  next();
+}
+
+/* 初始化 */
+renderQueue(); renderMain();
+</script>
+</body>
+</html>

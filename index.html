@@ -17,6 +17,14 @@
   .doc-subtitle { color:#64748b; margin:0 0 18px; font-size:15px; }
   .meta-grid { display:flex; flex-wrap:wrap; gap:8px 32px; font-size:13.5px; color:#475569; }
   .meta-grid b { color:#334155; }
+  .demo-banner { margin:22px 0 0; display:flex; align-items:center; gap:16px; background:linear-gradient(135deg,#A80009,#C7000B 60%,#D9182C); border:1px solid #C9A063; border-left:6px solid #C9A063; border-radius:12px; padding:16px 22px; color:#fff; }
+  .demo-banner .db-icon { font-size:30px; }
+  .demo-banner .db-text { flex:1; }
+  .demo-banner .db-t { font-size:16px; font-weight:700; }
+  .demo-banner .db-d { font-size:13px; opacity:.9; margin-top:2px; }
+  .demo-banner a { display:inline-block; background:#fff; color:#C7000B; font-weight:700; font-size:14px; padding:9px 20px; border-radius:8px; text-decoration:none; box-shadow:0 2px 8px rgba(0,0,0,.15); white-space:nowrap; }
+  .demo-banner a:hover { background:#FDF0F0; }
+  @media print { .demo-banner { display:none; } }
   .toc { border:1px solid #e2e8f0; border-radius:10px; padding:16px 22px; margin:26px 0 6px; background:#fafbfc; }
   .toc .toc-title { font-weight:600; color:#334155; font-size:14px; margin-bottom:6px; }
   .toc a { display:inline-block; margin:4px 18px 4px 0; color:#334155; text-decoration:none; font-size:14px; }
@@ -81,6 +89,15 @@
     <span><b>人机模式：</b>AI 辅助 + 人工复核</span>
   </div>
 </header>
+
+<div class="demo-banner">
+  <span class="db-icon">🖥️</span>
+  <span class="db-text">
+    <span class="db-t">想看实际效果？</span>
+    <span class="db-d">交互演示 Demo：智审助手审批工作台（AI 材料审核 → 风险点 + 证据链 → 审批意见书 → 人工复核决策）</span>
+  </span>
+  <a href="./demo/">打开产品 Demo →</a>
+</div>
 
 <nav class="toc">
   <div class="toc-title">目录</div>
